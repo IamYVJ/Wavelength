@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Wavelength</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:#0a0a12;color:#e8e8f0;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;padding:16px;display:flex;flex-direction:column;min-height:100vh}
+.hdr{text-align:center;padding:14px 0 4px}
+.hdr h1{font-family:'Dela Gothic One',sans-serif;font-size:2.2rem;
+  background:linear-gradient(135deg,#f7c948,#ff6b6b,#4ecdc4);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hdr p{color:#8888a0;font-size:.82rem;margin-top:2px}
+
+.scores{display:none;justify-content:center;gap:28px;margin:10px 0}
+.scores.on{display:flex}
+.sc{text-align:center;padding:8px 24px;border-radius:14px;background:#14141f;border:2px solid transparent}
+.sc.a1{border-color:#f7c948}.sc.a2{border-color:#4ecdc4}
+.sc .lb{font-size:.65rem;text-transform:uppercase;letter-spacing:2px;font-weight:700}
+.sc.s1 .lb{color:#f7c948}.sc.s2 .lb{color:#4ecdc4}
+.sc .v{font-family:'Dela Gothic One',sans-serif;font-size:1.8rem}
+
+.area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.scr{display:none;width:100%;flex-direction:column;align-items:center;gap:16px}
+.scr.vis{display:flex}
+
+.setup{text-align:center}
+.setup h2{font-family:'Dela Gothic One',sans-serif;font-size:1.5rem;margin-bottom:8px}
+.opt{display:flex;align-items:center;gap:14px;background:#14141f;padding:14px 20px;border-radius:14px}
+.opt label{font-weight:500;color:#8888a0;min-width:120px;text-align:left}
+.opt select{background:#1e1e2e;color:#e8e8f0;border:2px solid #8888a0;border-radius:8px;padding:8px 10px;font-family:inherit;font-size:.95rem}
+
+.card{width:100%;background:#14141f;border-radius:14px;padding:20px 20px 14px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#f7c948,#ff6b6b,#4ecdc4)}
+.labels{display:flex;justify-content:space-between;margin-bottom:10px}
+.labels span{font-family:'Dela Gothic One',sans-serif;font-size:.8rem;padding:5px 12px;border-radius:8px;background:#1e1e2e}
+.labels .ll{color:#f7c948}.labels .lr{color:#4ecdc4}
+
+.dial-wrap{position:relative;width:100%;max-width:500px;margin:0 auto}
+.dial-wrap svg{width:100%;height:auto;display:block}
+
+.cover-box{position:absolute;inset:0;background:#14141f;border-radius:10px;z-index:5;
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;text-align:center}
+.cover-box.on{display:flex}
+.cover-box.peeking{background:transparent}
+.cover-box.peeking p{display:none}
+.cover-box p{color:#8888a0;font-size:.82rem;max-width:280px}
+
+.info-bar{text-align:center;padding:10px 14px;border-radius:14px;background:#14141f;
+  font-size:.88rem;color:#8888a0;line-height:1.5;width:100%}
+.info-bar b{color:#e8e8f0}
+.c1{color:#f7c948!important}.c2{color:#4ecdc4!important}
+
+.clue-area{text-align:center;width:100%}
+.cl-lbl{font-size:.65rem;text-transform:uppercase;letter-spacing:2px;color:#8888a0;margin-bottom:6px}
+.cl-val{font-family:'Dela Gothic One',sans-serif;font-size:1.7rem;color:#f7c948;padding:8px}
+.cl-row{display:flex;gap:8px;max-width:360px;margin:0 auto}
+.cl-row input{flex:1;background:#1e1e2e;border:2px solid transparent;border-radius:10px;
+  padding:10px 14px;color:#e8e8f0;font-size:1rem;font-family:inherit;outline:none}
+.cl-row input:focus{border-color:#f7c948}
+
+.btn{font-family:inherit;font-weight:700;font-size:.88rem;padding:10px 22px;border:none;
+  border-radius:10px;cursor:pointer;text-transform:uppercase;letter-spacing:1px}
+.btn:active{transform:scale(.96)}
+.bp{background:linear-gradient(135deg,#f7c948,#e6b532);color:#0a0a12;box-shadow:0 3px 14px rgba(247,201,72,.3)}
+.bs{background:#1e1e2e;color:#e8e8f0;border:2px solid #8888a0}
+.bsm{padding:8px 14px;font-size:.8rem}
+.acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+.res{text-align:center;padding:14px;border-radius:14px;width:100%;animation:pop .35s cubic-bezier(.34,1.56,.64,1)}
+.res.bull{background:linear-gradient(135deg,rgba(247,201,72,.15),rgba(78,205,196,.15));border:2px solid #f7c948}
+.res.close{background:rgba(247,201,72,.08);border:2px solid rgba(247,201,72,.3)}
+.res.miss{background:rgba(255,107,107,.08);border:2px solid rgba(255,107,107,.3)}
+.res h2{font-family:'Dela Gothic One',sans-serif;font-size:1.3rem;margin-bottom:3px}
+.res p{color:#8888a0}
+
+.win-s{text-align:center}
+.win-s h2{font-family:'Dela Gothic One',sans-serif;font-size:1.8rem}
+.win-s .tr{font-size:3.5rem;margin-bottom:8px}
+
+@keyframes pop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+@media(max-width:550px){
+  .hdr h1{font-size:1.5rem}
+  .labels span{font-size:.68rem;padding:3px 8px}
+  .cl-val{font-size:1.3rem}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr"><h1>WAVELENGTH</h1><p>Read minds. Score points. Win.</p></div>
+
+  <div class="scores" id="scores">
+    <div class="sc s1" id="s1w"><div class="lb">Team 1</div><div class="v" id="s1v">0</div></div>
+    <div class="sc s2" id="s2w"><div class="lb">Team 2</div><div class="v" id="s2v">0</div></div>
+  </div>
+
+  <div class="area">
+    <div class="scr setup vis" id="setupScr">
+      <h2>Ready to play?</h2>
+      <div class="opt">
+        <label>Points to win</label>
+        <select id="ptsSel">
+          <option value="7">7 (Quick)</option>
+          <option value="10" selected>10 (Standard)</option>
+          <option value="15">15 (Marathon)</option>
+        </select>
+      </div>
+      <button class="btn bp" id="goBtn">Start Game</button>
+    </div>
+
+    <div class="scr" id="playScr">
+      <div class="info-bar" id="info"></div>
+      <div class="card">
+        <div class="labels">
+          <span class="ll" id="lL">—</span>
+          <span class="lr" id="lR">—</span>
+        </div>
+        <div class="dial-wrap" id="dialWrap">
+          <!-- viewBox: 400 wide, 210 tall. Center at bottom-center (200,200), radius 190. -->
+          <!-- Top of arc at y=10, sides at y=200. -->
+          <svg id="dialSvg" viewBox="0 0 400 210" xmlns="http://www.w3.org/2000/svg">
+            <g id="rainbowG"></g>
+            <g id="ticksG"></g>
+            <g id="zoneG" visibility="hidden">
+              <path id="zDec" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+              <path id="zClo" fill="rgba(255,255,255,0.45)" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>
+              <path id="zBul" fill="rgba(255,255,255,0.92)" stroke="#f7c948" stroke-width="2"/>
+              <line id="zLine" stroke="#0a0a12" stroke-width="3"/>
+            </g>
+            <g id="needleG" visibility="hidden">
+              <line id="nGlow" stroke="rgba(255,255,255,0.12)" stroke-width="8" stroke-linecap="round"/>
+              <line id="nLine" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+              <circle id="nTip" r="5" fill="#fff" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
+            </g>
+            <circle cx="200" cy="200" r="7" fill="#14141f" stroke="#fff" stroke-width="2" id="pivot"/>
+            <!-- Invisible hit area for clicks/drags -->
+            <rect x="0" y="0" width="400" height="210" fill="transparent" style="cursor:crosshair" id="hitArea"/>
+          </svg>
+          <div class="cover-box" id="cover">
+            <p>Only the <b>Psychic</b> should look!</p>
+            <button class="btn bp" id="peekBtn">Peek at Target</button>
+            <p>Tap to reveal / hide the target zone.</p>
+          </div>
+        </div>
+      </div>
+      <div class="clue-area" id="clueArea"></div>
+      <div class="acts" id="acts"></div>
+      <div id="resArea"></div>
+    </div>
+
+    <div class="scr win-s" id="winScr"></div>
+  </div>
+</div>
+
+<script>
+var SP=[
+["Overrated","Underrated"],["Hot Temperature","Cold Temperature"],
+["Bad Superpower","Good Superpower"],["Guilty Pleasure","Genuine Pleasure"],
+["Terrible Movie","Masterpiece"],["Easy to Spell","Hard to Spell"],
+["Boring","Exciting"],["Round","Pointy"],
+["Useless Invention","Useful Invention"],["Bad Pizza Topping","Good Pizza Topping"],
+["Scary Animal","Cute Animal"],["Weird Hobby","Normal Hobby"],
+["Old Person Thing","Young Person Thing"],["Brain Food","Comfort Food"],
+["Morning Activity","Night Activity"],["Needs Salt","Too Much Salt"],
+["Cheap Date","Expensive Date"],["Easy Job","Hard Job"],
+["Smells Bad","Smells Good"],["Bad Band Name","Good Band Name"],
+["Lame Costume","Cool Costume"],["Slow","Fast"],
+["Short","Tall"],["Ancient","Modern"],
+["Dangerous Sport","Safe Sport"],["Underpaid Job","Overpaid Job"],
+["Would Not Google","Would Google"],["Known by Everyone","Known by No One"],
+["Simple Concept","Complex Concept"],["Relaxing Vacation","Adventure Vacation"],
+["Silent","Loud"],["Undercooked","Overcooked"],
+["Villain","Hero"],["Childhood Fear","Adult Fear"],
+["Tiny","Massive"],["Would Survive Alone","Needs a Team"],
+["Bad First Date","Great First Date"],["Not a Sport","Definitely a Sport"],
+["Art","Not Art"],["Tastes Like Chicken","Doesn't Taste Like Chicken"]
+];
+
+var G={sc:[0,0],tm:0,goal:10,target:0,guess:0,spec:null,phase:'setup',used:[],clue:'',peeking:false};
+var el=function(id){return document.getElementById(id)};
+
+/* ═══════ SVG MATH ═══════
+   Center = (200, 200), Radius = 190, viewBox = 0 0 400 210
+   Game angle: -90 = left, 0 = top center, +90 = right
+   SVG angle (radians): uses standard (270+game)° mapping
+     -90 → 180° → point (10, 200) = left
+       0 → 270° → point (200, 10) = top
+     +90 → 360° → point (390, 200) = right
+*/
+var CX=200, CY=200, R=190;
+
+function g2r(gameDeg) {
+  return (270 + gameDeg) * Math.PI / 180;
+}
+
+function polarXY(gameDeg, radius) {
+  var a = g2r(gameDeg);
+  return { x: CX + radius * Math.cos(a), y: CY + radius * Math.sin(a) };
+}
+
+function wedgePath(fromDeg, toDeg) {
+  var p1 = polarXY(fromDeg, R);
+  var p2 = polarXY(toDeg, R);
+  var arcSpan = Math.abs(toDeg - fromDeg);
+  var largeArc = arcSpan > 180 ? 1 : 0;
+  // Sweep = 1 (clockwise in SVG) to go from left→top→right
+  return 'M'+CX+','+CY+' L'+p1.x+','+p1.y+' A'+R+','+R+' 0 '+largeArc+' 1 '+p2.x+','+p2.y+' Z';
+}
+
+/* ═══════ BUILD STATIC RAINBOW + TICKS ═══════ */
+(function() {
+  var cols=['#f7c948','#f7a348','#ff6b6b','#e84393','#a855f7',
+    '#6366f1','#4ecdc4','#2dd4bf','#34d399','#86efac','#f7c948'];
+  var rg = el('rainbowG');
+  var n = cols.length - 1;
+  for (var i = 0; i < n; i++) {
+    var d1 = -90 + (180 * i / n);
+    var d2 = -90 + (180 * (i + 1) / n);
+    var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', wedgePath(d1, d2));
+    p.setAttribute('fill', cols[i]);
+    rg.appendChild(p);
+  }
+  // Ticks
+  var tg = el('ticksG');
+  for (var d = -90; d <= 90; d += 10) {
+    var p1 = polarXY(d, R - 6);
+    var p2 = polarXY(d, R);
+    var ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    ln.setAttribute('x1', p1.x); ln.setAttribute('y1', p1.y);
+    ln.setAttribute('x2', p2.x); ln.setAttribute('y2', p2.y);
+    ln.setAttribute('stroke', 'rgba(255,255,255,0.2)');
+    ln.setAttribute('stroke-width', d % 30 === 0 ? '2' : '1');
+    tg.appendChild(ln);
+  }
+})();
+
+/* ═══════ UPDATE ZONE & NEEDLE ═══════ */
+function updateZone() {
+  var t = G.target;
+  el('zDec').setAttribute('d', wedgePath(t - 30, t + 30));
+  el('zClo').setAttribute('d', wedgePath(t - 18, t + 18));
+  el('zBul').setAttribute('d', wedgePath(t - 6, t + 6));
+  var p = polarXY(t, R);
+  var zl = el('zLine');
+  zl.setAttribute('x1', CX); zl.setAttribute('y1', CY);
+  zl.setAttribute('x2', p.x); zl.setAttribute('y2', p.y);
+}
+
+function showZone(v) { el('zoneG').setAttribute('visibility', v ? 'visible' : 'hidden'); }
+
+function updateNeedle() {
+  var p = polarXY(G.guess, R - 4);
+  el('nGlow').setAttribute('x1', CX); el('nGlow').setAttribute('y1', CY);
+  el('nGlow').setAttribute('x2', p.x); el('nGlow').setAttribute('y2', p.y);
+  el('nLine').setAttribute('x1', CX); el('nLine').setAttribute('y1', CY);
+  el('nLine').setAttribute('x2', p.x); el('nLine').setAttribute('y2', p.y);
+  el('nTip').setAttribute('cx', p.x); el('nTip').setAttribute('cy', p.y);
+}
+
+function showNeedle(v) { el('needleG').setAttribute('visibility', v ? 'visible' : 'hidden'); }
+
+/* ═══════ POINTER → GAME ANGLE ═══════ */
+function svgAngle(clientX, clientY) {
+  var svg = el('dialSvg');
+  var rect = svg.getBoundingClientRect();
+  if (!rect.width || !rect.height) return G.guess;
+  // Map screen coords → viewBox coords (400 x 210)
+  var vx = (clientX - rect.left) / rect.width * 400;
+  var vy = (clientY - rect.top) / rect.height * 210;
+  // Vector from center (200,200) to click, with Y flipped (up = positive)
+  var dx = vx - CX;
+  var dy = CY - vy;
+  // atan2(dx, dy): 0 = straight up, positive = right, negative = left
+  var deg = Math.atan2(dx, dy) * 180 / Math.PI;
+  return Math.max(-90, Math.min(90, deg));
+}
+
+/* ═══════ MOUSE EVENTS ═══════ */
+var dragging = false;
+
+el('hitArea').addEventListener('mousedown', function(e) {
+  if (G.phase !== 'guess') return;
+  e.preventDefault();
+  dragging = true;
+  G.guess = svgAngle(e.clientX, e.clientY);
+  updateNeedle();
+});
+
+document.addEventListener('mousemove', function(e) {
+  if (!dragging) return;
+  e.preventDefault();
+  G.guess = svgAngle(e.clientX, e.clientY);
+  updateNeedle();
+});
+
+document.addEventListener('mouseup', function() { dragging = false; });
+
+/* ═══════ TOUCH EVENTS ═══════ */
+el('hitArea').addEventListener('touchstart', function(e) {
+  if (G.phase !== 'guess') return;
+  e.preventDefault();
+  dragging = true;
+  var t = e.touches[0];
+  G.guess = svgAngle(t.clientX, t.clientY);
+  updateNeedle();
+}, {passive: false});
+
+document.addEventListener('touchmove', function(e) {
+  if (!dragging) return;
+  e.preventDefault();
+  var t = e.touches[0];
+  G.guess = svgAngle(t.clientX, t.clientY);
+  updateNeedle();
+}, {passive: false});
+
+document.addEventListener('touchend', function() { dragging = false; });
+
+/* ═══════ PEEK TOGGLE ═══════ */
+el('peekBtn').addEventListener('click', function(e) {
+  e.stopPropagation();
+  if (G.phase !== 'psychic') return;
+  G.peeking = !G.peeking;
+  showZone(G.peeking);
+  el('cover').classList.toggle('peeking', G.peeking);
+  this.textContent = G.peeking ? 'Hide Target' : 'Peek at Target';
+});
+
+/* ═══════ HELPERS ═══════ */
+function pick() {
+  if (G.used.length >= SP.length) G.used = [];
+  var i;
+  do { i = Math.random() * SP.length | 0; } while (G.used.includes(i));
+  G.used.push(i);
+  return SP[i];
+}
+
+function pts(d) { return d <= 6 ? 4 : d <= 18 ? 3 : d <= 30 ? 2 : 0; }
+function cn() { return G.tm === 0 ? 'c1' : 'c2'; }
+function tn() { return 'Team ' + (G.tm + 1); }
+
+function showScr(id) {
+  var all = document.querySelectorAll('.scr');
+  for (var i = 0; i < all.length; i++) all[i].classList.remove('vis');
+  el(id).classList.add('vis');
+}
+
+function updSc() {
+  el('s1v').textContent = G.sc[0];
+  el('s2v').textContent = G.sc[1];
+  el('s1w').className = 'sc s1' + (G.tm === 0 ? ' a1' : '');
+  el('s2w').className = 'sc s2' + (G.tm === 1 ? ' a2' : '');
+}
+
+/* ═══════ GAME FLOW ═══════ */
+el('goBtn').addEventListener('click', function() {
+  G.goal = parseInt(el('ptsSel').value);
+  G.sc = [0, 0]; G.tm = 0; G.used = [];
+  el('scores').classList.add('on');
+  updSc();
+  showScr('playScr');
+  startRound();
+});
+
+function startRound() {
+  G.spec = pick();
+  G.target = (Math.random() * 161 | 0) - 80;
+  G.guess = 0; G.clue = ''; G.phase = 'psychic'; G.peeking = false;
+
+  el('lL').textContent = G.spec[0];
+  el('lR').textContent = G.spec[1];
+
+  updateZone();
+  showZone(false);
+  showNeedle(false);
+  updateNeedle();
+
+  el('cover').classList.add('on');
+  el('cover').classList.remove('peeking');
+  el('peekBtn').textContent = 'Peek at Target';
+  el('info').innerHTML = '<b class="' + cn() + '">' + tn() + '</b>\'s turn — <b>Psychic phase</b><br>The Psychic peeks at the target, then gives a clue.';
+  el('clueArea').innerHTML = '';
+  el('resArea').innerHTML = '';
+  el('acts').innerHTML = '<button class="btn bp" id="seenBtn">I\'ve Seen It — Give Clue</button>';
+  el('seenBtn').addEventListener('click', cluePhase);
+}
+
+function cluePhase() {
+  G.phase = 'clue'; G.peeking = false;
+  el('cover').classList.remove('on', 'peeking');
+  showZone(false);
+
+  el('info').innerHTML = '<b class="' + cn() + '">' + tn() + '</b> — <b>Psychic, give your clue!</b>';
+  el('clueArea').innerHTML = '<div class="cl-lbl">Psychic\'s Clue</div><div class="cl-row"><input id="ci" placeholder="Enter clue..." maxlength="40" autocomplete="off"/><button class="btn bp" id="cgo">Go</button></div>';
+  el('acts').innerHTML = '';
+
+  el('ci').focus();
+  el('ci').addEventListener('keydown', function(e) { if (e.key === 'Enter') doClue(); });
+  el('cgo').addEventListener('click', doClue);
+}
+
+function doClue() {
+  var v = el('ci').value.trim();
+  if (!v) return;
+  G.clue = v; G.phase = 'guess'; G.guess = 0;
+
+  showNeedle(true);
+  updateNeedle();
+
+  el('info').innerHTML = '<b class="' + cn() + '">' + tn() + '</b> — <b>Guess the target!</b><br>Tap/drag the dial or use buttons.';
+  el('clueArea').innerHTML = '<div class="cl-lbl">Psychic\'s Clue</div><div class="cl-val">"' + G.clue + '"</div>';
+  el('acts').innerHTML =
+    '<button class="btn bs bsm" id="nL2">\u25C0\u25C0</button>' +
+    '<button class="btn bs bsm" id="nL1">\u25C0</button>' +
+    '<button class="btn bp" id="lockBtn">Lock In</button>' +
+    '<button class="btn bs bsm" id="nR1">\u25B6</button>' +
+    '<button class="btn bs bsm" id="nR2">\u25B6\u25B6</button>';
+
+  el('nL2').addEventListener('click', function() { nudge(-15); });
+  el('nL1').addEventListener('click', function() { nudge(-5); });
+  el('nR1').addEventListener('click', function() { nudge(5); });
+  el('nR2').addEventListener('click', function() { nudge(15); });
+  el('lockBtn').addEventListener('click', lock);
+}
+
+function nudge(d) {
+  G.guess = Math.max(-90, Math.min(90, G.guess + d));
+  updateNeedle();
+}
+
+function lock() {
+  G.phase = 'result';
+  var diff = Math.abs(G.guess - G.target);
+  var p = pts(diff);
+  G.sc[G.tm] += p;
+  updSc();
+
+  // Show both the target zone and the needle
+  showZone(true);
+  showNeedle(true);
+
+  var c, t, m;
+  if (p === 4) { c = 'bull'; t = '🎯 Bullseye!'; m = '+4 pts — incredible read!'; }
+  else if (p === 3) { c = 'close'; t = '🔥 So Close!'; m = '+3 pts — great wavelength!'; }
+  else if (p === 2) { c = 'close'; t = '👍 Decent'; m = '+2 pts — in the neighbourhood.'; }
+  else { c = 'miss'; t = '😬 Miss'; m = '+0 pts — off the wavelength.'; }
+
+  el('info').innerHTML = '<b class="' + cn() + '">' + tn() + '</b> scored <b>' + p + '</b> point' + (p !== 1 ? 's' : '') + '!';
+  el('resArea').innerHTML = '<div class="res ' + c + '"><h2>' + t + '</h2><p>' + m + '</p></div>';
+
+  if (G.sc[G.tm] >= G.goal) {
+    el('acts').innerHTML = '<button class="btn bp" id="wb">See Results</button>';
+    el('wb').addEventListener('click', winScreen);
+  } else {
+    el('acts').innerHTML = '<button class="btn bp" id="nb">Next Turn</button>';
+    el('nb').addEventListener('click', function() { G.tm = 1 - G.tm; updSc(); startRound(); });
+  }
+}
+
+function winScreen() {
+  showScr('winScr');
+  el('winScr').innerHTML =
+    '<div class="tr">🏆</div>' +
+    '<h2><span class="' + cn() + '">' + tn() + '</span> Wins!</h2>' +
+    '<p style="color:#8888a0;margin:8px 0 20px">' + G.sc[0] + ' — ' + G.sc[1] + '</p>' +
+    '<div class="acts"><button class="btn bp" id="rb">Play Again</button></div>';
+  el('rb').addEventListener('click', function() { el('scores').classList.remove('on'); showScr('setupScr'); });
+}
+</script>
+</body>
+</html>
