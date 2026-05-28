@@ -93,7 +93,11 @@ body{font-family:'DM Sans',sans-serif;background:#0a0a12;color:#e8e8f0;min-heigh
 </head>
 <body>
 <div class="wrap">
-  <div class="hdr"><h1>WAVELENGTH</h1><p>Read minds. Score points. Win.</p></div>
+  <div class="hdr">
+    <h1>WAVELENGTH</h1>
+    <p>Read minds. Score points. Win.</p>
+    <button class="btn bs bsm" id="newBtn" style="display:none;margin-top:10px">New Game</button>
+  </div>
 
   <div class="scores" id="scores">
     <div class="sc s1" id="s1w"><div class="lb">Team 1</div><div class="v" id="s1v">0</div></div>
@@ -182,8 +186,12 @@ var SP=[
 ["Art","Not Art"],["Tastes Like Chicken","Doesn't Taste Like Chicken"]
 ];
 
+var STORE='wavelength_v1';
 var G={sc:[0,0],tm:0,goal:10,target:0,guess:0,spec:null,phase:'setup',used:[],clue:'',peeking:false};
 var el=function(id){return document.getElementById(id)};
+
+function save(){try{if(G.phase==='setup')localStorage.removeItem(STORE);else localStorage.setItem(STORE,JSON.stringify(G));}catch(e){}}
+function load(){try{var s=localStorage.getItem(STORE);return s?JSON.parse(s):null;}catch(e){return null;}}
 
 /* ═══════ SVG MATH ═══════
    Center = (200, 200), Radius = 190, viewBox = 0 0 400 210
@@ -300,7 +308,7 @@ document.addEventListener('mousemove', function(e) {
   updateNeedle();
 });
 
-document.addEventListener('mouseup', function() { dragging = false; });
+document.addEventListener('mouseup', function() { if(dragging&&G.phase==='guess')save(); dragging = false; });
 
 /* ═══════ TOUCH EVENTS ═══════ */
 el('hitArea').addEventListener('touchstart', function(e) {
@@ -320,7 +328,7 @@ document.addEventListener('touchmove', function(e) {
   updateNeedle();
 }, {passive: false});
 
-document.addEventListener('touchend', function() { dragging = false; });
+document.addEventListener('touchend', function() { if(dragging&&G.phase==='guess')save(); dragging = false; });
 
 /* ═══════ PEEK TOGGLE ═══════ */
 el('peekBtn').addEventListener('click', function(e) {
@@ -363,27 +371,44 @@ el('goBtn').addEventListener('click', function() {
   G.goal = parseInt(el('ptsSel').value);
   G.sc = [0, 0]; G.tm = 0; G.used = [];
   el('scores').classList.add('on');
+  el('newBtn').style.display = '';
   updSc();
   showScr('playScr');
   startRound();
+});
+
+el('newBtn').addEventListener('click', function() {
+  if (!confirm('Start a new game? Current progress will be lost.')) return;
+  G = {sc:[0,0],tm:0,goal:10,target:0,guess:0,spec:null,phase:'setup',used:[],clue:'',peeking:false};
+  save();
+  el('scores').classList.remove('on');
+  el('newBtn').style.display = 'none';
+  showScr('setupScr');
 });
 
 function startRound() {
   G.spec = pick();
   G.target = (Math.random() * 161 | 0) - 80;
   G.guess = 0; G.clue = ''; G.phase = 'psychic'; G.peeking = false;
+  save();
+  renderRound();
+}
 
+function renderRound() {
   el('lL').textContent = G.spec[0];
   el('lR').textContent = G.spec[1];
+  updateZone(); updateNeedle();
+  if (G.phase === 'psychic') renderPsychic();
+  else if (G.phase === 'clue') renderClue();
+  else if (G.phase === 'guess') renderGuess();
+  else if (G.phase === 'result') renderResult();
+}
 
-  updateZone();
-  showZone(false);
-  showNeedle(false);
-  updateNeedle();
-
+function renderPsychic() {
+  showZone(G.peeking); showNeedle(false);
   el('cover').classList.add('on');
-  el('cover').classList.remove('peeking');
-  el('peekBtn').textContent = 'Peek at Target';
+  el('cover').classList.toggle('peeking', G.peeking);
+  el('peekBtn').textContent = G.peeking ? 'Hide Target' : 'Peek at Target';
   el('info').innerHTML = '<b class="' + cn() + '">' + tn() + '</b>\'s turn — <b>Psychic phase</b><br>The Psychic peeks at the target, then gives a clue.';
   el('clueArea').innerHTML = '';
   el('resArea').innerHTML = '';
@@ -393,13 +418,17 @@ function startRound() {
 
 function cluePhase() {
   G.phase = 'clue'; G.peeking = false;
-  el('cover').classList.remove('on', 'peeking');
-  showZone(false);
+  save();
+  renderClue();
+}
 
+function renderClue() {
+  el('cover').classList.remove('on', 'peeking');
+  showZone(false); showNeedle(false);
   el('info').innerHTML = '<b class="' + cn() + '">' + tn() + '</b> — <b>Psychic, give your clue!</b>';
   el('clueArea').innerHTML = '<div class="cl-lbl">Psychic\'s Clue</div><div class="cl-row"><input id="ci" placeholder="Enter clue..." maxlength="40" autocomplete="off"/><button class="btn bp" id="cgo">Go</button></div>';
   el('acts').innerHTML = '';
-
+  el('resArea').innerHTML = '';
   el('ci').focus();
   el('ci').addEventListener('keydown', function(e) { if (e.key === 'Enter') doClue(); });
   el('cgo').addEventListener('click', doClue);
@@ -409,12 +438,16 @@ function doClue() {
   var v = el('ci').value.trim();
   if (!v) return;
   G.clue = v; G.phase = 'guess'; G.guess = 0;
+  save();
+  renderGuess();
+}
 
-  showNeedle(true);
-  updateNeedle();
-
+function renderGuess() {
+  el('cover').classList.remove('on', 'peeking');
+  showZone(false); showNeedle(true); updateNeedle();
   el('info').innerHTML = '<b class="' + cn() + '">' + tn() + '</b> — <b>Guess the target!</b><br>Tap/drag the dial or use buttons.';
   el('clueArea').innerHTML = '<div class="cl-lbl">Psychic\'s Clue</div><div class="cl-val">"' + G.clue + '"</div>';
+  el('resArea').innerHTML = '';
   el('acts').innerHTML =
     '<button class="btn bs bsm" id="nL2">\u25C0\u25C0</button>' +
     '<button class="btn bs bsm" id="nL1">\u25C0</button>' +
@@ -432,19 +465,21 @@ function doClue() {
 function nudge(d) {
   G.guess = Math.max(-90, Math.min(90, G.guess + d));
   updateNeedle();
+  save();
 }
 
 function lock() {
   G.phase = 'result';
-  var diff = Math.abs(G.guess - G.target);
-  var p = pts(diff);
-  G.sc[G.tm] += p;
+  G.sc[G.tm] += pts(Math.abs(G.guess - G.target));
+  save();
+  renderResult();
+}
+
+function renderResult() {
   updSc();
-
-  // Show both the target zone and the needle
-  showZone(true);
-  showNeedle(true);
-
+  el('cover').classList.remove('on', 'peeking');
+  showZone(true); showNeedle(true); updateNeedle();
+  var p = pts(Math.abs(G.guess - G.target));
   var c, t, m;
   if (p === 4) { c = 'bull'; t = '🎯 Bullseye!'; m = '+4 pts — incredible read!'; }
   else if (p === 3) { c = 'close'; t = '🔥 So Close!'; m = '+3 pts — great wavelength!'; }
@@ -452,6 +487,7 @@ function lock() {
   else { c = 'miss'; t = '😬 Miss'; m = '+0 pts — off the wavelength.'; }
 
   el('info').innerHTML = '<b class="' + cn() + '">' + tn() + '</b> scored <b>' + p + '</b> point' + (p !== 1 ? 's' : '') + '!';
+  el('clueArea').innerHTML = '<div class="cl-lbl">Psychic\'s Clue</div><div class="cl-val">"' + G.clue + '"</div>';
   el('resArea').innerHTML = '<div class="res ' + c + '"><h2>' + t + '</h2><p>' + m + '</p></div>';
 
   if (G.sc[G.tm] >= G.goal) {
@@ -470,8 +506,25 @@ function winScreen() {
     '<h2><span class="' + cn() + '">' + tn() + '</span> Wins!</h2>' +
     '<p style="color:#8888a0;margin:8px 0 20px">' + G.sc[0] + ' — ' + G.sc[1] + '</p>' +
     '<div class="acts"><button class="btn bp" id="rb">Play Again</button></div>';
+  G.phase = 'setup';
+  save();
+  el('newBtn').style.display = 'none';
   el('rb').addEventListener('click', function() { el('scores').classList.remove('on'); showScr('setupScr'); });
 }
+
+/* RESTORE ON LOAD */
+(function() {
+  var s = load();
+  if (s && s.phase && s.phase !== 'setup' && s.spec) {
+    for (var k in s) G[k] = s[k];
+    el('scores').classList.add('on');
+    el('ptsSel').value = G.goal;
+    el('newBtn').style.display = '';
+    updSc();
+    showScr('playScr');
+    renderRound();
+  }
+})();
 </script>
 </body>
 </html>
